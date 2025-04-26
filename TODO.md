@@ -26,16 +26,28 @@ This document outlines the development plan for Urwald, a lightweight, zero-depe
 - [ ] Add event delegation for better performance
 - [ ] Enhance router with query parameter support
 - [ ] Add basic form handling utilities
+- [ ] Create animation utilities using the View Transitions API
+- [ ] Implement an `effect()` function for handling side effects in response to state changes
+- [ ] Implement a Vite plugin for enhanced development experience
 
-## Phase 4: Performance Optimizations
+## Phase 4: Data & Backend Integration
+
+- [ ] Implement data fetching utilities (inspired by TanStack Query)
+- [ ] Add state persistence options (localStorage, sessionStorage)
+- [ ] Create backend communication patterns with fetch wrappers
+- [ ] Add utilities for form validation and submission
+- [ ] Implement simple caching mechanisms
+
+## Phase 5: Performance Optimizations
 
 - [ ] Implement DOM diffing for efficient updates
 - [ ] Add batched rendering for multiple state changes
 - [ ] Optimize memory usage with pooling for frequent operations
 - [ ] Add tree-shaking optimization
 - [ ] Implement lazy loading for routes
+- [ ] Add virtual lists for handling large datasets
 
-## Phase 5: Developer Experience
+## Phase 6: Developer Experience
 
 - [ ] Add development mode with helpful warnings
 - [ ] Implement debugging tools for state visualization
@@ -43,23 +55,23 @@ This document outlines the development plan for Urwald, a lightweight, zero-depe
 - [ ] Add browser DevTools extension
 - [ ] Provide component composition patterns and guidelines
 
-## Phase 6: Advanced Features
+## Phase 7: Advanced Features
 
 - [ ] Add middleware system for router
 - [ ] Implement component lifecycle hooks
-- [ ] Add animation utilities integrated with state changes
-- [ ] Add data fetching utilities with caching
-- [ ] Implement virtual list for large datasets
+- [ ] Enhance animation utilities with advanced transitions and effects
+- [ ] Add more sophisticated state management for complex applications
+- [ ] Create utilities for WebSocket integration
 
-## Phase 7: Ecosystem Development
+## Phase 8: Ecosystem Development
 
 - [ ] Create component library (UI kit)
 - [ ] Add theming support
-- [ ] Implement state persistence (localStorage, etc)
 - [ ] Add server-side rendering support
 - [ ] Create adapters for popular backend frameworks
+- [ ] Develop full-stack example applications
 
-## Phase 8: Enterprise Features
+## Phase 9: Enterprise Features
 
 - [ ] Add accessibility testing utilities
 - [ ] Implement internationalization support
