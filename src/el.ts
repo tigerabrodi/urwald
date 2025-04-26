@@ -61,9 +61,9 @@ export function el<HtmlTagName extends keyof HTMLElementTagNameMap>(
       return creator;
     },
 
-    on: <E extends keyof HTMLElementEventMap>(
-      event: E,
-      handler: EventHandler<E>
+    on: <Event extends keyof HTMLElementEventMap>(
+      event: Event,
+      handler: EventHandler<Event>
     ) => {
       element.addEventListener(event, handler as EventListener);
       return creator;
