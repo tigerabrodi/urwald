@@ -1,18 +1,40 @@
 import { el } from "./el";
 
+/**
+ * Defines route mappings from URL paths to component functions
+ * Each key is a URL path and each value is a function that returns an HTMLElement
+ */
 export interface RouteDefinition {
   [path: string]: () => HTMLElement;
 }
 
+/**
+ * Interface for the router object that manages navigation and rendering
+ */
 export interface Router {
+  /**
+   * The container element where route components will be rendered
+   */
   container: HTMLElement;
+
+  /**
+   * Navigates to a specific path and renders the corresponding component
+   * @param path The URL path to navigate to
+   */
   navigate: (path: string) => void;
 }
 
 /**
- * Creates a client-side router
+ * Creates a client-side router that handles navigation and rendering of components
  * @param routes Object mapping paths to component functions
- * @returns A router instance
+ * @returns A router instance with navigation methods and container element
+ * @example
+ * const myRouter = router({
+ *   '/': () => homePage(),
+ *   '/about': () => aboutPage(),
+ *   '/contact': () => contactPage()
+ * });
+ * document.body.appendChild(myRouter.container);
  */
 export function router(routes: RouteDefinition): Router {
   // Create container element
@@ -21,7 +43,10 @@ export function router(routes: RouteDefinition): Router {
   // Store active component cleanup function if any
   let cleanup: (() => void) | null = null;
 
-  // Function to render the current route
+  /**
+   * Renders the component for the specified path
+   * @param path The URL path to render
+   */
   const renderRoute = (path: string): void => {
     // Clear previous content
     while (container.firstChild) {
@@ -74,11 +99,14 @@ export function router(routes: RouteDefinition): Router {
 }
 
 /**
- * Creates a link that works with the router
- * @param text Link text
- * @param path Target path
- * @param options Additional options (className, etc)
- * @returns An anchor element
+ * Creates a link element that works with the router for client-side navigation
+ * @param text Link text to display
+ * @param path Target URL path to navigate to
+ * @param options Additional options for the link (e.g., className)
+ * @returns An anchor element configured for client-side routing
+ * @example
+ * const homeLink = link('Home', '/', { className: 'nav-link' });
+ * navbar.appendChild(homeLink);
  */
 export function link(
   text: string,
