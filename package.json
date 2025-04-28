@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "description": "A tiny, type-safe UI library for modern browsers",
   "license": "MIT",
+  "type": "module",
   "files": [
     "dist"
   ],
