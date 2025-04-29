@@ -32,7 +32,7 @@ export interface ElementCreator<T extends HTMLElement> {
    * @returns The ElementCreator instance for chaining
    */
   add: <Element extends HTMLElement>(
-    ...children: Element[]
+    ...children: Array<Element>
   ) => ElementCreator<T>;
 
   /**
