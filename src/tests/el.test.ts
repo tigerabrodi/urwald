@@ -1,4 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { el } from "../el";
 
 describe("el function", () => {
@@ -36,6 +35,7 @@ describe("el function", () => {
 
     expect(button.textContent).toBe("Count: 0");
     count = 1;
+    // TODO: In the future this would be a reactive value anyways
     // Need to trigger an update here in a real app
   });
 
