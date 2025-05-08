@@ -64,7 +64,7 @@ describe("state function", () => {
   });
 
   it("works with array state", () => {
-    const items = state<string[]>(["a", "b"]);
+    const items = state<Array<string>>(["a", "b"]);
 
     items.update((current) => [...current, "c"]);
     expect(items.value).toEqual(["a", "b", "c"]);

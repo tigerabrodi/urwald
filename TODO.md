@@ -2,6 +2,10 @@
 
 This document outlines the development plan for Urwald, a lightweight, zero-dependency UI library focused on type safety and modern browser features.
 
+Immediate next steps:
+
+- Fix CI linting, that's because of the User json settings
+
 ## Phase 1: Core Functionality ✅
 
 - [x] Set up project structure with tsup and vitest
@@ -11,12 +15,9 @@ This document outlines the development plan for Urwald, a lightweight, zero-depe
 
 ## Phase 2: Reliability & Documentation
 
-- [ ] Add comprehensive JSDoc comments to all public APIs
-- [ ] Create README with installation, usage examples, and API reference
-- [ ] Create simple example app demonstrating core features
-- [ ] Set up CI/CD pipeline for automated testing and linting
-- [ ] Add bundle size monitoring to CI
-- [ ] Publish to npm
+- [x] Add comprehensive JSDoc comments to all public APIs
+- [x] Set up CI/CD pipeline for automated testing and linting
+- [x] Add bundle size monitoring to CI
 
 ## Phase 3: Real-world Usability
 

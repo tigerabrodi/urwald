@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { el } from "../el";
-import { link, router } from "../router";
+import { link, router, Router } from "../router";
 
 describe("router function", () => {
   beforeEach(() => {
@@ -51,6 +51,7 @@ describe("router function", () => {
 
     routerInstance.navigate("/about");
     expect(routerInstance.container.textContent).toBe("About");
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(window.history.pushState).toHaveBeenCalledWith(null, "", "/about");
   });
 
@@ -69,8 +70,9 @@ describe("router function", () => {
 
   it("creates navigation links", () => {
     // Mock router instance
-    (window as any).__urwaldRouter = {
+    (window as unknown as { __urwaldRouter: Router }).__urwaldRouter = {
       navigate: vi.fn(),
+      container: document.createElement("div"),
     };
 
     const homeLink = link("Home", "/", { className: "nav-link" });
@@ -82,6 +84,8 @@ describe("router function", () => {
 
     // Trigger click
     homeLink.click();
-    expect((window as any).__urwaldRouter.navigate).toHaveBeenCalledWith("/");
+    expect(
+      (window as unknown as { __urwaldRouter: Router }).__urwaldRouter.navigate
+    ).toHaveBeenCalledWith("/");
   });
 });
