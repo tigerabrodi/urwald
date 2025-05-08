@@ -72,7 +72,9 @@ export function router(routes: RouteDefinition): Router {
         typeof component.getAttribute === "function" &&
         component.getAttribute("data-cleanup")
       ) {
-        const cleanupFn = window[component.getAttribute("data-cleanup") as any];
+        const cleanupFn = window[
+          component.getAttribute("data-cleanup") as keyof Window
+        ] as (() => void) | undefined;
         if (typeof cleanupFn === "function") {
           cleanup = cleanupFn;
         }
@@ -119,7 +121,9 @@ export function link(
     .class(options.className || "")
     .on("click", (event) => {
       event.preventDefault();
-      const routerInstance = (window as any).__urwaldRouter;
+
+      const routerInstance = (window as unknown as { __urwaldRouter: Router })
+        .__urwaldRouter;
       if (routerInstance) {
         routerInstance.navigate(path);
       } else {
