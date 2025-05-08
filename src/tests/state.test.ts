@@ -72,4 +72,35 @@ describe("state function", () => {
     items.value = [];
     expect(items.value).toEqual([]);
   });
+
+  it("works with nested state", () => {
+    const user = state<{ name: string; age: number }>({
+      name: "John",
+      age: 30,
+    });
+    const nested = state<{ user: typeof user }>({ user });
+
+    expect(nested.value.user.value.name).toBe("John");
+  });
+
+  it("updates reactively when nested object changes", () => {
+    const user = state({
+      name: "John",
+      age: 30,
+      address: {
+        city: "New York",
+        country: "USA",
+      },
+    });
+
+    user.update((current) => ({
+      ...current,
+      address: {
+        city: "Los Angeles",
+        country: "USA",
+      },
+    }));
+
+    expect(user.value.address.city).toBe("Los Angeles");
+  });
 });
