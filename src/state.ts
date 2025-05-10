@@ -1,84 +1,139 @@
 /**
  * Function that observes state changes
- * @template ValueType The type of value being observed
- * @param value The current state value
  */
-type Observer<ValueType> = (value: ValueType) => void;
+type Observer<T> = (value: T) => void;
 
 /**
- * Interface for managing reactive state
- * @template ValueType The type of value being managed
+ * Interface for a reactive state manager
  */
-export interface StateManager<ValueType> {
+export interface StateManager<T extends object> {
   /**
-   * The current state value
-   * Reading this property returns the current state
-   * Setting this property updates the state and notifies observers
+   * The reactive state object
+   * Properties can be accessed and modified directly
    */
-  value: ValueType;
+  state: T;
 
   /**
-   * Registers an observer function to be called when the state changes
-   * @param observer Function to call when state changes
-   * @returns A function that, when called, unregisters the observer
+   * Register an observer function to be called when state changes
+   * @param observer Function to call with the current state when changes occur
+   * @returns Function to unsubscribe the observer
    */
-  observe: (observer: Observer<ValueType>) => () => void;
+  observe: (observer: Observer<T>) => () => void;
 
   /**
    * Updates the state using an updater function
-   * @param updater Function that receives the current state and returns the new state
+   * @param updater Function that receives current state and returns updated state
    */
-  update: (updater: (current: ValueType) => ValueType) => void;
+  update: (updater: (current: T) => T) => void;
 }
 
 /**
- * Creates a reactive state container that notifies observers of changes
- * @template ValueType The type of value to store in the state
- * @param initialValue The initial state value
- * @returns A StateManager object for managing the state
+ * Creates a reactive state object using JavaScript Proxy
+ * @param initialValue The initial state
+ * @returns A reactive state manager
  * @example
- * const counter = state(0);
+ * const user = state({ name: "John", age: 30 });
  *
  * // Subscribe to changes
- * const unsubscribe = counter.observe(value => console.log(`Counter: ${value}`));
+ * const unsubscribe = user.observe(state => {
+ *   console.log(`User updated: ${state.name}, ${state.age}`);
+ * });
  *
- * // Update the state
- * counter.value = 1;  // Logs: "Counter: 1"
- *
- * // Update with a function
- * counter.update(current => current + 1);  // Logs: "Counter: 2"
+ * // Update properties naturally
+ * user.state.name = "Jane"; // Logs: "User updated: Jane, 30"
+ * user.state.age = 31;      // Logs: "User updated: Jane, 31"
  *
  * // Unsubscribe when done
  * unsubscribe();
  */
-export function state<ValueType>(
-  initialValue: ValueType
-): StateManager<ValueType> {
-  let currentValue = initialValue;
-  const observers = new Set<Observer<ValueType>>();
+export function state<T extends object>(initialValue: T): StateManager<T> {
+  // Clone initial value to avoid external mutations
+  const target = structuredClone(initialValue);
+  const observers = new Set<Observer<T>>();
 
   /**
-   * Notifies all observers of the current state value
-   * @private
+   * Recursively create proxies for nested objects
    */
-  const notifyObservers = (): void => {
-    observers.forEach((observer) => observer(currentValue));
-  };
+  function makeReactive<K extends object>(obj: K): K {
+    const isArray = Array.isArray(obj);
 
-  return {
-    get value(): ValueType {
-      return currentValue;
-    },
+    return new Proxy(obj, {
+      get(target, prop, receiver) {
+        const value = Reflect.get(target, prop, receiver);
 
-    set value(newValue: ValueType) {
-      currentValue = newValue;
-      notifyObservers();
-    },
+        // Handle array methods that modify the array
+        if (isArray && typeof value === "function") {
+          const method = String(prop);
+          const mutatingMethods = [
+            "push",
+            "pop",
+            "shift",
+            "unshift",
+            "splice",
+            "sort",
+            "reverse",
+            "fill",
+          ];
 
-    observe: (observer: Observer<ValueType>): (() => void) => {
+          if (mutatingMethods.includes(method)) {
+            return function (...args: Array<unknown>) {
+              const result = (
+                value as (...args: Array<unknown>) => unknown
+              ).apply(target, args);
+              notifyObservers();
+              return result;
+            };
+          }
+        }
+
+        // Create proxies for nested objects and arrays
+        if (value && typeof value === "object") {
+          return makeReactive(value as object) as unknown;
+        }
+
+        return value;
+      },
+
+      set(target, prop, value, receiver) {
+        const oldValue = Reflect.get(target, prop, receiver);
+        // Only trigger updates if value actually changed
+        if (oldValue !== value) {
+          const isSet = Reflect.set(target, prop, value, receiver);
+          notifyObservers();
+          return isSet;
+        }
+        return true;
+      },
+
+      deleteProperty(target, prop) {
+        if (prop in target) {
+          const isDeleted = Reflect.deleteProperty(target, prop);
+          notifyObservers();
+          return isDeleted;
+        }
+        return true;
+      },
+    });
+  }
+
+  /**
+   * Notifies all observers with the current state
+   */
+  function notifyObservers(): void {
+    observers.forEach((observer) => observer(reactiveState));
+  }
+
+  // Create the top-level proxy
+  const reactiveState = makeReactive(target);
+
+  // The public API
+  const manager: StateManager<T> = {
+    state: reactiveState,
+
+    observe(observer: Observer<T>): () => void {
       observers.add(observer);
-      // Call immediately with current value
-      observer(currentValue);
+      // Call immediately with current state
+      observer(reactiveState);
 
       // Return unsubscribe function
       return () => {
@@ -86,9 +141,13 @@ export function state<ValueType>(
       };
     },
 
-    update: (updater: (current: ValueType) => ValueType): void => {
-      currentValue = updater(currentValue);
-      notifyObservers();
+    update(updater: (current: T) => T): void {
+      // Pass the state to the updater and let it make changes
+      // Since we're using a proxy, any changes will automatically trigger observers
+      updater(reactiveState);
+      // No need to explicitly notify observers - the proxy will do that
     },
   };
+
+  return manager;
 }

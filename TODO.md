@@ -17,7 +17,7 @@ This document outlines the development plan for Urwald, a lightweight, zero-depe
 
 ## Phase 3: Real-world Usability
 
-- [ ] Support nested state objects with deep reactivity
+- [x] Support nested state objects with deep reactivity
 - [ ] Implement utility functions for common patterns
 - [ ] Add event delegation for better performance
 - [ ] Enhance router with query parameter support
