@@ -29,6 +29,9 @@ const todoList = el("ul")
 // When state changes (items added/removed/updated), the list automatically updates
 ```
 
+- make render list reactive
+- talk with ai what it means for render list to be reactive
+
 ### Conditional Rendering
 
 ```typescript
