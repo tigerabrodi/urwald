@@ -106,3 +106,64 @@ export function isDeepEqual(a: unknown, b: unknown): boolean {
     );
   });
 }
+
+/**
+ * Conditionally renders content based on a state condition
+ * @template T The type of the state object
+ * @param options Configuration options
+ * @returns A function to clean up the conditional rendering
+ */
+export function when<T extends object>({
+  state,
+  condition,
+  render,
+  else: renderElse,
+  container,
+}: {
+  state: StateManager<T>;
+  condition: (state: T) => boolean;
+  render: () => HTMLElement;
+  else?: () => HTMLElement;
+  container: HTMLElement;
+}): () => void {
+  let currentElement: HTMLElement | null = null;
+  let currentCondition: boolean;
+
+  const renderElement = (shouldRender: boolean) => {
+    if (currentElement) {
+      container.removeChild(currentElement);
+      currentElement = null;
+    }
+
+    if (shouldRender) {
+      currentElement = render();
+    } else if (renderElse) {
+      currentElement = renderElse();
+    }
+
+    if (currentElement) {
+      container.appendChild(currentElement);
+    }
+
+    currentCondition = shouldRender;
+  };
+
+  const initialCondition = condition(state.state);
+  // handle initial render
+  renderElement(initialCondition);
+
+  const unsubscribe = state.observe((newState) => {
+    const newCondition = condition(newState);
+
+    if (newCondition !== currentCondition) {
+      renderElement(newCondition);
+    }
+  });
+
+  return () => {
+    unsubscribe();
+    if (currentElement && container.contains(currentElement)) {
+      container.removeChild(currentElement);
+    }
+  };
+}
