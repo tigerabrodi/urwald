@@ -2,4 +2,4 @@
 export { el } from "./el";
 export { link, router } from "./router";
 export { state } from "./state";
-export { isDeepEqual, renderList } from "./utils";
+export { isDeepEqual, renderList, when } from "./utils";
