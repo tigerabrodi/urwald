@@ -306,9 +306,10 @@ export function toggleClass({
  * @param dependencies An array of state managers that the computed value depends on
  * @returns A function that returns the computed value
  */
-export function computed<T, S extends object>(
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function computed<T, S extends Array<StateManager<any>>>(
   getter: () => T,
-  dependencies: Array<StateManager<S>>
+  dependencies: [...S]
 ): () => T {
   let cachedValue = getter();
   let isValid = true;
