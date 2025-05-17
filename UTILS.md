@@ -1,31 +1,3 @@
-### Conditional Rendering
-
-```typescript
-const authState = state({ isLoggedIn: false, user: null });
-
-const app = el("div")
-  .add(
-    when(
-      () => authState.state.isLoggedIn,
-      el("div")
-        .class("dashboard")
-        .text(() => `Welcome, ${authState.state.user?.name}`)
-        .done(),
-      // Optional else branch
-      el("div").class("login-form").add(/* login elements */).done()
-    )
-  )
-  .done();
-
-// Later, on login:
-authState.update((s) => {
-  s.isLoggedIn = true;
-  s.user = { name: "John", role: "admin" };
-  return s;
-});
-// The UI automatically switches from login form to dashboard
-```
-
 ### Debounce/Throttle
 
 ```typescript
