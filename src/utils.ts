@@ -270,3 +270,31 @@ export function throttle<Args extends Array<unknown>, Return>(
 
   return throttled;
 }
+
+/**
+ * Toggles one or more CSS classes on an element
+ * @param options Configuration options
+ */
+export function toggleClass({
+  element,
+  class: className,
+  condition,
+}: {
+  element: HTMLElement;
+  class: string | Array<string>;
+  condition?: boolean;
+}): void {
+  const classes = Array.isArray(className) ? className : [className];
+
+  classes.forEach((cls) => {
+    if (condition === undefined) {
+      element.classList.toggle(cls);
+    } else {
+      if (condition) {
+        element.classList.add(cls);
+      } else {
+        element.classList.remove(cls);
+      }
+    }
+  });
+}
