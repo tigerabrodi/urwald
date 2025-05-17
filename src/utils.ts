@@ -298,3 +298,32 @@ export function toggleClass({
     }
   });
 }
+
+/**
+ * Creates a computed value that re-evaluates when its dependencies change
+ * @template T The type of the computed value
+ * @param getter A function that returns the computed value
+ * @param dependencies An array of state managers that the computed value depends on
+ * @returns A function that returns the computed value
+ */
+export function computed<T, S extends object>(
+  getter: () => T,
+  dependencies: Array<StateManager<S>>
+): () => T {
+  let cachedValue = getter();
+  let isValid = true;
+
+  dependencies.forEach((dep) => {
+    dep.observe(() => {
+      isValid = false;
+    });
+  });
+
+  return () => {
+    if (!isValid) {
+      cachedValue = getter();
+      isValid = true;
+    }
+    return cachedValue;
+  };
+}
