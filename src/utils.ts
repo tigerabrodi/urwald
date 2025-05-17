@@ -167,3 +167,106 @@ export function when<T extends object>({
     }
   };
 }
+
+/**
+ * Creates a debounced function that delays execution until after wait
+ * milliseconds have passed without additional calls
+ */
+export function debounce<Args extends Array<unknown>, Return>(
+  func: (...args: Args) => Return,
+  wait: number
+): {
+  (...args: Args): void;
+  cancel: () => void;
+  flush: () => Return | undefined;
+} {
+  let timeoutId: number | undefined;
+  let lastArgs: Args | undefined;
+  let result: Return | undefined;
+
+  function debounced(...args: Args): void {
+    if (timeoutId !== undefined) {
+      clearTimeout(timeoutId);
+    }
+
+    lastArgs = args;
+
+    timeoutId = setTimeout(() => {
+      if (lastArgs) {
+        result = func(...lastArgs);
+      }
+    }, wait);
+  }
+
+  debounced.cancel = () => {
+    if (timeoutId !== undefined) {
+      clearTimeout(timeoutId);
+      timeoutId = undefined;
+    }
+  };
+
+  debounced.flush = () => {
+    debounced.cancel();
+    if (lastArgs) {
+      result = func(...lastArgs);
+    }
+    return result;
+  };
+
+  return debounced;
+}
+
+/**
+ * Creates a throttled function that limits execution to once per wait period
+ */
+export function throttle<Args extends Array<unknown>, Return>(
+  func: (...args: Args) => Return,
+  wait: number
+): {
+  (...args: Args): Return | undefined;
+  cancel: () => void;
+} {
+  let lastCallTime: number | undefined;
+  let timeoutId: number | undefined;
+  let lastArgs: Args | undefined;
+  let result: Return | undefined;
+
+  function throttled(...args: Args): Return | undefined {
+    const now = Date.now();
+
+    const timeSinceLastCall = now - (lastCallTime ?? 0);
+    const hasWaitedLongEnough = timeSinceLastCall >= wait;
+
+    // if it's the first call or the wait time has passed, call the function
+    if (lastCallTime === undefined || hasWaitedLongEnough) {
+      lastCallTime = now;
+      result = func(...args);
+      return result;
+    }
+
+    lastArgs = args;
+
+    // if function is not already scheduled to be called, schedule it
+    if (timeoutId === undefined) {
+      timeoutId = setTimeout(() => {
+        if (lastArgs) {
+          lastCallTime = Date.now();
+          result = func(...lastArgs);
+          lastArgs = undefined;
+        }
+        timeoutId = undefined;
+      }, wait - (now - lastCallTime));
+    }
+
+    return result;
+  }
+
+  throttled.cancel = () => {
+    if (timeoutId !== undefined) {
+      clearTimeout(timeoutId);
+      timeoutId = undefined;
+    }
+  };
+
+  return throttled;
+}
