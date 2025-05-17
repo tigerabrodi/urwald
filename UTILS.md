@@ -1,25 +1,3 @@
-### DOM Helpers
-
-```typescript
-const themeState = state({ isDarkMode: false });
-
-// Instead of manual class management:
-const toggleTheme = () => {
-  themeState.update((s) => {
-    s.isDarkMode = !s.isDarkMode;
-    return s;
-  });
-
-  // Automatically update classes based on state
-  toggleClass(document.body, "dark-theme", themeState.state.isDarkMode);
-};
-
-// Or with a reactive approach:
-effect(() => {
-  toggleClass(document.body, "dark-theme", themeState.state.isDarkMode);
-});
-```
-
 ### Computed Values
 
 ```typescript
