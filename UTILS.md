@@ -1,25 +1,3 @@
-### Debounce/Throttle
-
-```typescript
-const searchState = state({ query: "", results: [] });
-
-// Search input with debounced updates
-const searchInput = el("input")
-  .attr({ type: "text", placeholder: "Search..." })
-  .on(
-    "input",
-    debounce((e) => {
-      const query = e.target.value;
-      searchState.update((s) => {
-        s.query = query;
-        return s;
-      });
-      fetchSearchResults(query);
-    }, 300)
-  ) // Only trigger search 300ms after typing stops
-  .done();
-```
-
 ### DOM Helpers
 
 ```typescript
