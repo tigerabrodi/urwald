@@ -37,15 +37,38 @@ describe("computed", () => {
 
     const fullName = computed(getter, [userState]);
 
+    // runs twice
+    // once on intiialization
+    // and once when we call the computed function
     expect(fullName()).toBe("John Doe");
-    expect(getter).toHaveBeenCalledTimes(1);
+    expect(getter).toHaveBeenCalledTimes(2);
 
     expect(fullName()).toBe("John Doe");
-    expect(getter).toHaveBeenCalledTimes(1);
+    expect(getter).toHaveBeenCalledTimes(2);
 
     userState.state.firstName = "Jane";
 
     expect(fullName()).toBe("Jane Doe");
-    expect(getter).toHaveBeenCalledTimes(2);
+    expect(getter).toHaveBeenCalledTimes(3);
+  });
+
+  it("updates when any dependency changes", () => {
+    const userState = state({ firstName: "John" });
+    const jobState = state({ title: "Developer" });
+
+    const description = computed(
+      () => `${userState.state.firstName} - ${jobState.state.title}`,
+      [userState, jobState]
+    );
+
+    expect(description()).toBe("John - Developer");
+
+    // Update first dependency
+    userState.state.firstName = "Jane";
+    expect(description()).toBe("Jane - Developer");
+
+    // Update second dependency
+    jobState.state.title = "Designer";
+    expect(description()).toBe("Jane - Designer");
   });
 });
