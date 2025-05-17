@@ -1,37 +1,3 @@
-Let me walk through how users would practically use these utility functions with your existing framework:
-
-### List Rendering
-
-```typescript
-// User has a state with items
-const todoListState = state({
-  items: [
-    { id: 1, text: "Buy milk", completed: false },
-    { id: 2, text: "Write code", completed: true },
-  ],
-});
-
-// In their UI code:
-const todoList = el("ul")
-  .add(
-    renderList(
-      () => todoListState.state.items,
-      (item) =>
-        el("li")
-          .class(item.completed ? "completed" : "")
-          .text(item.text)
-          .on("click", () => toggleTodo(item.id))
-          .done()
-    )
-  )
-  .done();
-
-// When state changes (items added/removed/updated), the list automatically updates
-```
-
-- make render list reactive
-- talk with ai what it means for render list to be reactive
-
 ### Conditional Rendering
 
 ```typescript
