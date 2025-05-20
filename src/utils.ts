@@ -180,7 +180,7 @@ export function debounce<Args extends Array<unknown>, Return>(
   cancel: () => void;
   flush: () => Return | undefined;
 } {
-  let timeoutId: number | undefined;
+  let timeoutId: NodeJS.Timeout | undefined;
   let lastArgs: Args | undefined;
   let result: Return | undefined;
 
@@ -227,7 +227,7 @@ export function throttle<Args extends Array<unknown>, Return>(
   cancel: () => void;
 } {
   let lastCallTime: number | undefined;
-  let timeoutId: number | undefined;
+  let timeoutId: NodeJS.Timeout | undefined;
   let lastArgs: Args | undefined;
   let result: Return | undefined;
 
