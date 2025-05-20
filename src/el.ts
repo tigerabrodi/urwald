@@ -1,4 +1,7 @@
 // Define types for the element creator
+
+import { isTestMode } from "./internal/utils";
+
 /**
  * Represents CSS styles that can be applied to an HTML element
  * A partial type of the CSSStyleDeclaration interface
@@ -13,6 +16,23 @@ type Styles = Partial<CSSStyleDeclaration>;
 type EventHandler<HtmlTagName extends keyof HTMLElementEventMap> = (
   e: HTMLElementEventMap[HtmlTagName]
 ) => void;
+
+// Global registry for parent observers and unmount callbacks
+const parentObservers = new Map<HTMLElement, MutationObserver>();
+export const unmountRegistry = new WeakMap<HTMLElement, Array<() => void>>();
+
+function processRemovedNode(node: Node): void {
+  if (node instanceof HTMLElement && unmountRegistry.has(node)) {
+    const callbacks = unmountRegistry.get(node) || [];
+    callbacks.forEach((callback) => callback());
+    unmountRegistry.delete(node);
+  }
+
+  // Check children recursively
+  if (node.childNodes && node.childNodes.length > 0) {
+    node.childNodes.forEach((child) => processRemovedNode(child));
+  }
+}
 
 /**
  * The ElementCreator interface defines a chainable API for creating and manipulating DOM elements
@@ -34,6 +54,13 @@ export interface ElementCreator<T extends HTMLElement> {
   add: <Element extends HTMLElement>(
     ...children: Array<Element>
   ) => ElementCreator<T>;
+
+  /**
+   * Adds a callback to be called when the element is removed from the DOM
+   * @param callback The callback to call when the element is removed from the DOM
+   * @returns The ElementCreator instance for chaining
+   */
+  onUnmount: (callback: () => void) => ElementCreator<T>;
 
   /**
    * Sets the text content of the element
@@ -94,6 +121,47 @@ export function el<HtmlTagName extends keyof HTMLElementTagNameMap>(
 
   // Create the ElementCreator instance once
   const creator: ElementCreator<HTMLElementTagNameMap[HtmlTagName]> = {
+    onUnmount: (callback) => {
+      if (!unmountRegistry.has(element)) {
+        unmountRegistry.set(element, []);
+      }
+
+      unmountRegistry.get(element)?.push(callback);
+
+      if (!isTestMode) {
+        const waitForConnection = () => {
+          if (!element.isConnected) {
+            console.log("Waiting for connection - element is not connected");
+            setTimeout(waitForConnection, 50);
+            return;
+          }
+
+          const parent = element.parentElement || document.body;
+
+          // Create observer for this parent if needed
+          if (!parentObservers.has(parent)) {
+            const observer = new MutationObserver((mutations) => {
+              for (const mutation of mutations) {
+                console.log("processing mutation", mutation);
+                mutation.removedNodes.forEach((node) =>
+                  processRemovedNode(node)
+                );
+              }
+            });
+
+            observer.observe(parent, { childList: true });
+            parentObservers.set(parent, observer);
+          }
+        };
+
+        // Start the process
+        waitForConnection();
+      }
+
+      // Wait until element is connected to set up observer
+      return creator;
+    },
+
     style: (styles) => {
       // Batch style updates in next animation frame for performance
       requestAnimationFrame(() => {
