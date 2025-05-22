@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { el } from "../el";
 import { link, router, Router } from "../router";
 
-describe("router function", () => {
+describe("router", () => {
   beforeEach(() => {
     // Setup a clean DOM environment
     document.body.innerHTML = "";
@@ -21,7 +21,10 @@ describe("router function", () => {
 
   it("creates a router with container element", () => {
     const routes = {
-      "/": () => el("div").text("Home").done(),
+      "/": () => ({
+        element: el("div").text("Home").done(),
+        cleanup: null,
+      }),
     };
 
     const routerInstance = router(routes);
@@ -30,8 +33,14 @@ describe("router function", () => {
 
   it("renders the current route", () => {
     const routes = {
-      "/": () => el("div").text("Home").done(),
-      "/about": () => el("div").text("About").done(),
+      "/": () => ({
+        element: el("div").text("Home").done(),
+        cleanup: null,
+      }),
+      "/about": () => ({
+        element: el("div").text("About").done(),
+        cleanup: null,
+      }),
     };
 
     const routerInstance = router(routes);
@@ -42,8 +51,14 @@ describe("router function", () => {
 
   it("navigates to different routes", () => {
     const routes = {
-      "/": () => el("div").text("Home").done(),
-      "/about": () => el("div").text("About").done(),
+      "/": () => ({
+        element: el("div").text("Home").done(),
+        cleanup: null,
+      }),
+      "/about": () => ({
+        element: el("div").text("About").done(),
+        cleanup: null,
+      }),
     };
 
     const routerInstance = router(routes);
@@ -57,8 +72,14 @@ describe("router function", () => {
 
   it("falls back to root route if path not found", () => {
     const routes = {
-      "/": () => el("div").text("Home").done(),
-      "/about": () => el("div").text("About").done(),
+      "/": () => ({
+        element: el("div").text("Home").done(),
+        cleanup: null,
+      }),
+      "/about": () => ({
+        element: el("div").text("About").done(),
+        cleanup: null,
+      }),
     };
 
     const routerInstance = router(routes);
@@ -91,5 +112,52 @@ describe("router function", () => {
     expect(
       (window as unknown as { __urwaldRouter: Router }).__urwaldRouter.navigate
     ).toHaveBeenCalledWith("/");
+  });
+
+  it("calls cleanup function when navigating to a new route", () => {
+    const homeCleanup = vi.fn();
+
+    const routes = {
+      "/": () => ({
+        element: el("div").text("Home").done(),
+        cleanup: homeCleanup,
+      }),
+      "/about": () => ({
+        element: el("div").text("About").done(),
+        cleanup: null,
+      }),
+    };
+
+    const routerInstance = router(routes);
+    document.body.appendChild(routerInstance.container);
+
+    // Navigate to about page
+    routerInstance.navigate("/about");
+
+    // Home cleanup should be called
+    expect(homeCleanup).toHaveBeenCalledTimes(1);
+  });
+
+  it("calls cleanup when browser navigation occurs", () => {
+    const homeCleanup = vi.fn();
+
+    const routes = {
+      "/": () => ({
+        element: el("div").text("Home").done(),
+        cleanup: homeCleanup,
+      }),
+      "/about": () => ({
+        element: el("div").text("About").done(),
+        cleanup: null,
+      }),
+    };
+
+    router(routes);
+
+    // Simulate browser back/forward navigation
+    window.location.pathname = "/about";
+    window.dispatchEvent(new Event("popstate"));
+
+    expect(homeCleanup).toHaveBeenCalledTimes(1);
   });
 });

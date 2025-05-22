@@ -1,11 +1,16 @@
 import { el } from "./el";
 
+type RouteElement = {
+  element: HTMLElement;
+  cleanup: (() => void) | null;
+};
+
 /**
  * Defines route mappings from URL paths to component functions
  * Each key is a URL path and each value is a function that returns an HTMLElement
  */
 export interface RouteDefinition {
-  [path: string]: () => HTMLElement;
+  [path: string]: () => RouteElement;
 }
 
 /**
@@ -53,7 +58,7 @@ export function router(routes: RouteDefinition): Router {
       container.removeChild(container.firstChild);
     }
 
-    // Call cleanup if exists
+    // Call cleanup if exists before we render new route
     if (cleanup) {
       cleanup();
       cleanup = null;
@@ -63,19 +68,11 @@ export function router(routes: RouteDefinition): Router {
     const route = routes[path] || routes["/"] || Object.values(routes)[0];
 
     if (route) {
-      const component = route();
-      container.appendChild(component);
+      const { element, cleanup: routeCleanupFn } = route();
+      container.appendChild(element);
 
-      if (
-        typeof component.getAttribute === "function" &&
-        component.getAttribute("data-cleanup")
-      ) {
-        const cleanupFn = window[
-          component.getAttribute("data-cleanup") as keyof Window
-        ] as (() => void) | undefined;
-        if (typeof cleanupFn === "function") {
-          cleanup = cleanupFn;
-        }
+      if (routeCleanupFn) {
+        cleanup = routeCleanupFn;
       }
     }
   };
