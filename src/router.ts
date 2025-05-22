@@ -63,11 +63,9 @@ export function router(routes: RouteDefinition): Router {
     const route = routes[path] || routes["/"] || Object.values(routes)[0];
 
     if (route) {
-      // Render the component
       const component = route();
       container.appendChild(component);
 
-      // Store cleanup function if component returns one
       if (
         typeof component.getAttribute === "function" &&
         component.getAttribute("data-cleanup")
@@ -82,7 +80,6 @@ export function router(routes: RouteDefinition): Router {
     }
   };
 
-  // Handle browser navigation
   window.addEventListener("popstate", () => {
     renderRoute(window.location.pathname);
   });
@@ -93,7 +90,6 @@ export function router(routes: RouteDefinition): Router {
   return {
     container,
     navigate: (path: string) => {
-      // Update browser history
       window.history.pushState(null, "", path);
       renderRoute(path);
     },
@@ -110,11 +106,15 @@ export function router(routes: RouteDefinition): Router {
  * const homeLink = link('Home', '/', { className: 'nav-link' });
  * navbar.appendChild(homeLink);
  */
-export function link(
-  text: string,
-  path: string,
-  options: { className?: string } = {}
-): HTMLElement {
+export function link({
+  text,
+  path,
+  options,
+}: {
+  text: string;
+  path: string;
+  options: { className?: string };
+}): HTMLElement {
   return el("a")
     .text(text)
     .attr({ href: path })

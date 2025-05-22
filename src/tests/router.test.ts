@@ -75,7 +75,11 @@ describe("router function", () => {
       container: document.createElement("div"),
     };
 
-    const homeLink = link("Home", "/", { className: "nav-link" });
+    const homeLink = link({
+      text: "Home",
+      path: "/",
+      options: { className: "nav-link" },
+    });
 
     expect(homeLink.tagName).toBe("A");
     expect(homeLink.textContent).toBe("Home");
