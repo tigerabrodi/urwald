@@ -19,7 +19,6 @@ This document outlines the development plan for Urwald, a lightweight, zero-depe
 
 - [x] Support nested state objects with deep reactivity
 - [x] Implement utility functions for common patterns
-- [ ] Add event delegation for better performance
 - [ ] Enhance router with query parameter support
 - [ ] Add basic form handling utilities
 - [ ] Create animation utilities using the View Transitions API
