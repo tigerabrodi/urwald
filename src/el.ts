@@ -28,7 +28,6 @@ function processRemovedNode(node: Node): void {
     unmountRegistry.delete(node);
   }
 
-  // Check children recursively
   if (node.childNodes && node.childNodes.length > 0) {
     node.childNodes.forEach((child) => processRemovedNode(child));
   }
