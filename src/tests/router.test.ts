@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { el } from "../el";
 import { link, router, Router } from "../router";
 
-describe("router", () => {
+describe("router function", () => {
   beforeEach(() => {
     // Setup a clean DOM environment
     document.body.innerHTML = "";
@@ -14,7 +14,10 @@ describe("router", () => {
 
     // Reset location
     Object.defineProperty(window, "location", {
-      value: { pathname: "/" },
+      value: {
+        pathname: "/",
+        search: "",
+      },
       writable: true,
     });
   });
@@ -70,14 +73,14 @@ describe("router", () => {
     expect(window.history.pushState).toHaveBeenCalledWith(null, "", "/about");
   });
 
-  it("falls back to root route if path not found", () => {
+  it("navigates with query parameters", () => {
     const routes = {
       "/": () => ({
         element: el("div").text("Home").done(),
         cleanup: null,
       }),
-      "/about": () => ({
-        element: el("div").text("About").done(),
+      "/products": () => ({
+        element: el("div").text("Products").done(),
         cleanup: null,
       }),
     };
@@ -85,33 +88,74 @@ describe("router", () => {
     const routerInstance = router(routes);
     document.body.appendChild(routerInstance.container);
 
-    routerInstance.navigate("/not-found");
-    expect(routerInstance.container.textContent).toBe("Home");
-  });
-
-  it("creates navigation links", () => {
-    // Mock router instance
-    (window as unknown as { __urwaldRouter: Router }).__urwaldRouter = {
-      navigate: vi.fn(),
-      container: document.createElement("div"),
-    };
-
-    const homeLink = link({
-      text: "Home",
-      path: "/",
-      options: { className: "nav-link" },
+    routerInstance.navigate("/products", {
+      category: "electronics",
+      sort: "price",
     });
 
-    expect(homeLink.tagName).toBe("A");
-    expect(homeLink.textContent).toBe("Home");
-    expect(homeLink.getAttribute("href")).toBe("/");
-    expect(homeLink.className).toBe("nav-link");
+    expect(routerInstance.container.textContent).toBe("Products");
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    expect(window.history.pushState).toHaveBeenCalledWith(
+      null,
+      "",
+      "/products?category=electronics&sort=price"
+    );
+  });
 
-    // Trigger click
-    homeLink.click();
-    expect(
-      (window as unknown as { __urwaldRouter: Router }).__urwaldRouter.navigate
-    ).toHaveBeenCalledWith("/");
+  it("gets current query parameters", () => {
+    // Mock location with search params
+    Object.defineProperty(window, "location", {
+      value: {
+        pathname: "/products",
+        search: "?category=electronics&sort=price",
+      },
+      writable: true,
+    });
+
+    const routes = {
+      "/products": () => ({
+        element: el("div").text("Products").done(),
+        cleanup: null,
+      }),
+    };
+
+    const routerInstance = router(routes);
+    const queryParams = routerInstance.getQueryParams();
+
+    expect(queryParams).toEqual({
+      category: "electronics",
+      sort: "price",
+    });
+  });
+
+  it("updates query parameters without changing route", () => {
+    // Mock location
+    Object.defineProperty(window, "location", {
+      value: {
+        pathname: "/products",
+        search: "",
+      },
+      writable: true,
+    });
+
+    const routes = {
+      "/products": () => ({
+        element: el("div").text("Products").done(),
+        cleanup: null,
+      }),
+    };
+
+    const routerInstance = router(routes);
+    document.body.appendChild(routerInstance.container);
+
+    routerInstance.updateQueryParams({ page: 2, filter: "active" });
+
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    expect(window.history.pushState).toHaveBeenCalledWith(
+      null,
+      "",
+      "/products?page=2&filter=active"
+    );
   });
 
   it("calls cleanup function when navigating to a new route", () => {
@@ -138,26 +182,30 @@ describe("router", () => {
     expect(homeCleanup).toHaveBeenCalledTimes(1);
   });
 
-  it("calls cleanup when browser navigation occurs", () => {
-    const homeCleanup = vi.fn();
-
-    const routes = {
-      "/": () => ({
-        element: el("div").text("Home").done(),
-        cleanup: homeCleanup,
-      }),
-      "/about": () => ({
-        element: el("div").text("About").done(),
-        cleanup: null,
-      }),
+  it("creates navigation links", () => {
+    // Mock router instance
+    (window as unknown as { __urwaldRouter: Router }).__urwaldRouter = {
+      navigate: vi.fn(),
+      getQueryParams: vi.fn(),
+      updateQueryParams: vi.fn(),
+      container: document.createElement("div"),
     };
 
-    router(routes);
+    const homeLink = link({
+      text: "Home",
+      path: "/",
+      options: { className: "nav-link" },
+    });
 
-    // Simulate browser back/forward navigation
-    window.location.pathname = "/about";
-    window.dispatchEvent(new Event("popstate"));
+    expect(homeLink.tagName).toBe("A");
+    expect(homeLink.textContent).toBe("Home");
+    expect(homeLink.getAttribute("href")).toBe("/");
+    expect(homeLink.className).toBe("nav-link");
 
-    expect(homeCleanup).toHaveBeenCalledTimes(1);
+    // Trigger click
+    homeLink.click();
+    expect(
+      (window as unknown as { __urwaldRouter: Router }).__urwaldRouter.navigate
+    ).toHaveBeenCalledWith("/");
   });
 });

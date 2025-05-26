@@ -6,6 +6,11 @@ type RouteElement = {
 };
 
 /**
+ * Query parameters object type
+ */
+export type QueryParams = Record<string, string | number | boolean>;
+
+/**
  * Defines route mappings from URL paths to component functions
  * Each key is a URL path and each value is a function that returns an HTMLElement
  */
@@ -25,8 +30,53 @@ export interface Router {
   /**
    * Navigates to a specific path and renders the corresponding component
    * @param path The URL path to navigate to
+   * @param queryParams Optional query parameters to include in the URL
    */
-  navigate: (path: string) => void;
+  navigate: (path: string, queryParams?: QueryParams) => void;
+
+  /**
+   * Gets the current query parameters from the URL
+   * @returns Object containing current query parameters
+   */
+  getQueryParams: () => Record<string, string>;
+
+  /**
+   * Updates only the query parameters without changing the current route
+   * @param params Query parameters to update
+   */
+  updateQueryParams: (params: QueryParams) => void;
+}
+
+/**
+ * Parses URL search string into an object
+ * @param search The search string (e.g., "?foo=bar&baz=qux")
+ * @returns Object with parsed query parameters
+ */
+function parseQueryParams(search: string): Record<string, string> {
+  const params: Record<string, string> = {};
+  const urlParams = new URLSearchParams(search);
+
+  for (const [key, value] of urlParams.entries()) {
+    params[key] = value;
+  }
+
+  return params;
+}
+
+/**
+ * Serializes an object into a URL search string
+ * @param params Object to serialize
+ * @returns URL search string (e.g., "?foo=bar&baz=qux")
+ */
+function serializeQueryParams(params: QueryParams): string {
+  const urlParams = new URLSearchParams();
+
+  Object.entries(params).forEach(([key, value]) => {
+    urlParams.set(key, String(value));
+  });
+
+  const searchString = urlParams.toString();
+  return searchString ? `?${searchString}` : "";
 }
 
 /**
@@ -86,9 +136,25 @@ export function router(routes: RouteDefinition): Router {
 
   return {
     container,
-    navigate: (path: string) => {
-      window.history.pushState(null, "", path);
+
+    navigate: (path: string, queryParams?: QueryParams) => {
+      const searchString = queryParams ? serializeQueryParams(queryParams) : "";
+      const fullUrl = `${path}${searchString}`;
+
+      window.history.pushState(null, "", fullUrl);
       renderRoute(path);
+    },
+
+    getQueryParams: () => {
+      return parseQueryParams(window.location.search);
+    },
+
+    updateQueryParams: (params: QueryParams) => {
+      const currentPath = window.location.pathname;
+      const searchString = serializeQueryParams(params);
+      const fullUrl = `${currentPath}${searchString}`;
+
+      window.history.pushState(null, "", fullUrl);
     },
   };
 }
