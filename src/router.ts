@@ -45,6 +45,15 @@ export interface Router {
    * @param params Query parameters to update
    */
   updateQueryParams: (params: QueryParams) => void;
+
+  /**
+   * Observes query parameter changes reactively
+   * @param observer Function to call when query parameters change
+   * @returns Function to unsubscribe the observer
+   */
+  observeQueryParams: (
+    observer: (params: Record<string, string>) => void
+  ) => () => void;
 }
 
 /**
@@ -98,11 +107,40 @@ export function router(routes: RouteDefinition): Router {
   // Store active component cleanup function if any
   let cleanup: (() => void) | null = null;
 
+  // Query param observers - similar to state system
+  const queryObservers = new Set<(params: Record<string, string>) => void>();
+
+  // Current query params cache
+  let currentQueryParams = parseQueryParams(window.location.search);
+
+  // Notify all query param observers
+  const notifyQueryObservers = (params: Record<string, string>) => {
+    queryObservers.forEach((observer) => observer(params));
+  };
+
   /**
    * Renders the component for the specified path
    * @param path The URL path to render
+   * @param shouldNotifyQueryObservers Whether to notify query param observers
    */
-  const renderRoute = (path: string): void => {
+  const renderRoute = (
+    path: string,
+    shouldNotifyQueryObservers = true
+  ): void => {
+    // Parse new query params
+    const newQueryParams = parseQueryParams(window.location.search);
+
+    // Check if query params changed
+    const queryParamsChanged =
+      JSON.stringify(currentQueryParams) !== JSON.stringify(newQueryParams);
+
+    if (queryParamsChanged) {
+      currentQueryParams = newQueryParams;
+      if (shouldNotifyQueryObservers) {
+        notifyQueryObservers(currentQueryParams);
+      }
+    }
+
     // Clear previous content
     while (container.firstChild) {
       container.removeChild(container.firstChild);
@@ -128,11 +166,11 @@ export function router(routes: RouteDefinition): Router {
   };
 
   window.addEventListener("popstate", () => {
-    renderRoute(window.location.pathname);
+    renderRoute(window.location.pathname, true);
   });
 
   // Initial render
-  renderRoute(window.location.pathname);
+  renderRoute(window.location.pathname, false);
 
   return {
     container,
@@ -142,11 +180,11 @@ export function router(routes: RouteDefinition): Router {
       const fullUrl = `${path}${searchString}`;
 
       window.history.pushState(null, "", fullUrl);
-      renderRoute(path);
+      renderRoute(path, true);
     },
 
     getQueryParams: () => {
-      return parseQueryParams(window.location.search);
+      return currentQueryParams;
     },
 
     updateQueryParams: (params: QueryParams) => {
@@ -155,6 +193,23 @@ export function router(routes: RouteDefinition): Router {
       const fullUrl = `${currentPath}${searchString}`;
 
       window.history.pushState(null, "", fullUrl);
+
+      // Update current params and notify observers
+      currentQueryParams = parseQueryParams(window.location.search);
+      notifyQueryObservers(currentQueryParams);
+    },
+
+    observeQueryParams: (
+      observer: (params: Record<string, string>) => void
+    ) => {
+      queryObservers.add(observer);
+      // Call immediately with current params
+      observer(currentQueryParams);
+
+      // Return unsubscribe function
+      return () => {
+        queryObservers.delete(observer);
+      };
     },
   };
 }
