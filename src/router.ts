@@ -6,6 +6,11 @@ type RouteElement = {
 };
 
 /**
+ * Query parameters object type
+ */
+export type QueryParams = Record<string, string | number | boolean>;
+
+/**
  * Defines route mappings from URL paths to component functions
  * Each key is a URL path and each value is a function that returns an HTMLElement
  */
@@ -25,8 +30,62 @@ export interface Router {
   /**
    * Navigates to a specific path and renders the corresponding component
    * @param path The URL path to navigate to
+   * @param queryParams Optional query parameters to include in the URL
    */
-  navigate: (path: string) => void;
+  navigate: (path: string, queryParams?: QueryParams) => void;
+
+  /**
+   * Gets the current query parameters from the URL
+   * @returns Object containing current query parameters
+   */
+  getQueryParams: () => Record<string, string>;
+
+  /**
+   * Updates only the query parameters without changing the current route
+   * @param params Query parameters to update
+   */
+  updateQueryParams: (params: QueryParams) => void;
+
+  /**
+   * Observes query parameter changes reactively
+   * @param observer Function to call when query parameters change
+   * @returns Function to unsubscribe the observer
+   */
+  observeQueryParams: (
+    observer: (params: Record<string, string>) => void
+  ) => () => void;
+}
+
+/**
+ * Parses URL search string into an object
+ * @param search The search string (e.g., "?foo=bar&baz=qux")
+ * @returns Object with parsed query parameters
+ */
+function parseQueryParams(search: string): Record<string, string> {
+  const params: Record<string, string> = {};
+  const urlParams = new URLSearchParams(search);
+
+  for (const [key, value] of urlParams.entries()) {
+    params[key] = value;
+  }
+
+  return params;
+}
+
+/**
+ * Serializes an object into a URL search string
+ * @param params Object to serialize
+ * @returns URL search string (e.g., "?foo=bar&baz=qux")
+ */
+function serializeQueryParams(params: QueryParams): string {
+  const urlParams = new URLSearchParams();
+
+  Object.entries(params).forEach(([key, value]) => {
+    urlParams.set(key, String(value));
+  });
+
+  const searchString = urlParams.toString();
+  return searchString ? `?${searchString}` : "";
 }
 
 /**
@@ -48,11 +107,40 @@ export function router(routes: RouteDefinition): Router {
   // Store active component cleanup function if any
   let cleanup: (() => void) | null = null;
 
+  // Query param observers - similar to state system
+  const queryObservers = new Set<(params: Record<string, string>) => void>();
+
+  // Current query params cache
+  let currentQueryParams = parseQueryParams(window.location.search);
+
+  // Notify all query param observers
+  const notifyQueryObservers = (params: Record<string, string>) => {
+    queryObservers.forEach((observer) => observer(params));
+  };
+
   /**
    * Renders the component for the specified path
    * @param path The URL path to render
+   * @param shouldNotifyQueryObservers Whether to notify query param observers
    */
-  const renderRoute = (path: string): void => {
+  const renderRoute = (
+    path: string,
+    shouldNotifyQueryObservers = true
+  ): void => {
+    // Parse new query params
+    const newQueryParams = parseQueryParams(window.location.search);
+
+    // Check if query params changed
+    const queryParamsChanged =
+      JSON.stringify(currentQueryParams) !== JSON.stringify(newQueryParams);
+
+    if (queryParamsChanged) {
+      currentQueryParams = newQueryParams;
+      if (shouldNotifyQueryObservers) {
+        notifyQueryObservers(currentQueryParams);
+      }
+    }
+
     // Clear previous content
     while (container.firstChild) {
       container.removeChild(container.firstChild);
@@ -78,17 +166,50 @@ export function router(routes: RouteDefinition): Router {
   };
 
   window.addEventListener("popstate", () => {
-    renderRoute(window.location.pathname);
+    renderRoute(window.location.pathname, true);
   });
 
   // Initial render
-  renderRoute(window.location.pathname);
+  renderRoute(window.location.pathname, false);
 
   return {
     container,
-    navigate: (path: string) => {
-      window.history.pushState(null, "", path);
-      renderRoute(path);
+
+    navigate: (path: string, queryParams?: QueryParams) => {
+      const searchString = queryParams ? serializeQueryParams(queryParams) : "";
+      const fullUrl = `${path}${searchString}`;
+
+      window.history.pushState(null, "", fullUrl);
+      renderRoute(path, true);
+    },
+
+    getQueryParams: () => {
+      return currentQueryParams;
+    },
+
+    updateQueryParams: (params: QueryParams) => {
+      const currentPath = window.location.pathname;
+      const searchString = serializeQueryParams(params);
+      const fullUrl = `${currentPath}${searchString}`;
+
+      window.history.pushState(null, "", fullUrl);
+
+      // Update current params and notify observers
+      currentQueryParams = parseQueryParams(window.location.search);
+      notifyQueryObservers(currentQueryParams);
+    },
+
+    observeQueryParams: (
+      observer: (params: Record<string, string>) => void
+    ) => {
+      queryObservers.add(observer);
+      // Call immediately with current params
+      observer(currentQueryParams);
+
+      // Return unsubscribe function
+      return () => {
+        queryObservers.delete(observer);
+      };
     },
   };
 }
